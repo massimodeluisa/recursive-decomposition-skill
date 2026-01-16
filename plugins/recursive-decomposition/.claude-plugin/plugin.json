@@ -1,0 +1,12 @@
+{
+  "name": "recursive-decomposition",
+  "version": "1.0.0",
+  "description": "Claude Code skill for handling long-context tasks through recursive decomposition strategies based on RLM research (Zhang, Kraska, Khattab 2025)",
+  "author": {
+    "name": "Massimo De Luisa",
+    "email": "massimodeluisa@me.com"
+  },
+  "repository": "https://github.com/massimodeluisa/recursive-decomposition-skill",
+  "license": "MIT",
+  "keywords": ["claude-code", "long-context", "recursive-decomposition", "rlm", "ai-agents"]
+}
