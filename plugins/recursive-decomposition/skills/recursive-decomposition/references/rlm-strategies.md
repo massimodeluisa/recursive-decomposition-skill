@@ -111,6 +111,15 @@ section_4 = generate("Write conclusion...")
 full_output = stitch_with_transitions([section_1, section_2, section_3, section_4])
 ```
 
+## Claude Code Constraints
+
+To ensure optimal performance within Claude's environment:
+
+-   **Code Processing Limit**: ~2,000 lines. Files larger than this should not be read entirely into context. Use `grep` or read specific line ranges.
+-   **PDF Size Limit**: ~30MB or 100 pages per request. Exceeding this often leads to errors or truncation.
+-   **Text File Limit**: ~50KB is a safe maximum for a single `view_file` operation without chunking.
+-   **Context Window**: While large, optimal reasoning occurs with <30k tokens. Use decomposition to stay within this "reasoning sweet spot".
+
 ## Task Complexity Classification
 
 ### Constant Complexity (O(1))

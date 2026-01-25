@@ -1,6 +1,6 @@
 {
   "name": "recursive-decomposition",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Claude Code skill for handling long-context tasks through recursive decomposition strategies based on RLM research (Zhang, Kraska, Khattab 2025)",
   "author": {
     "name": "Massimo De Luisa",

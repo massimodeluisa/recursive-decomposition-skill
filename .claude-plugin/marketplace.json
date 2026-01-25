@@ -4,12 +4,15 @@
     "name": "Massimo De Luisa",
     "email": "massimodeluisa@me.com"
   },
+  "metadata": {
+    "description": "Recursive decomposition strategies for long-context tasks"
+  },
   "plugins": [
     {
       "name": "recursive-decomposition",
       "source": "./plugins/recursive-decomposition",
       "description": "Recursive decomposition strategies for long-context tasks",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "Massimo De Luisa",
         "email": "massimodeluisa@me.com"
