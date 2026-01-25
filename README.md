@@ -155,6 +155,25 @@ The skill recognizes these patterns:
 
 ---
 
+## When to Use
+
+The skill is designed for **complex, long-context tasks**. Use it when:
+
+- Analyzing 10+ files simultaneously
+- Processing documents exceeding 50k tokens
+- Performing codebase-wide pattern analysis
+- Extracting information from multiple scattered sources
+- Multi-hop reasoning requiring evidence synthesis
+
+**When NOT to use:**
+
+- Single file edits → Direct processing is faster
+- Specific function lookup → Use Grep directly
+- Tasks < 30k tokens → Overhead not worth it
+- Time-critical operations → Latency matters more than completeness
+
+---
+
 ## How It Works
 
 ### Decomposition Strategies
@@ -211,18 +230,19 @@ recursive-decomposition-skill/
 │   └── recursive-decomposition/
 │       ├── .claude-plugin/
 │       │   └── plugin.json       # Plugin manifest
+│       ├── README.md             # Plugin documentation
 │       └── skills/
 │           └── recursive-decomposition/
 │               ├── SKILL.md      # Core skill instructions
-│               ├── references/
-│               │   ├── rlm-strategies.md
-│               │   └── cost-analysis.md
-│               └── examples/
+│               └── references/
+│                   ├── rlm-strategies.md
+│                   ├── cost-analysis.md
 │                   ├── codebase-analysis.md
 │                   └── document-aggregation.md
 ├── assets/
 │   └── logo.png                  # Project logo
 ├── AGENTS.md                     # Agent-facing docs
+├── CONTRIBUTING.md               # Contribution guidelines
 ├── LICENSE
 └── README.md
 ```
@@ -236,19 +256,8 @@ recursive-decomposition-skill/
 | [`SKILL.md`](plugins/recursive-decomposition/skills/recursive-decomposition/SKILL.md) | Core decomposition strategies and patterns |
 | [`references/rlm-strategies.md`](plugins/recursive-decomposition/skills/recursive-decomposition/references/rlm-strategies.md) | Detailed techniques from the RLM paper |
 | [`references/cost-analysis.md`](plugins/recursive-decomposition/skills/recursive-decomposition/references/cost-analysis.md) | When to use recursive vs. direct approaches |
-| [`examples/codebase-analysis.md`](plugins/recursive-decomposition/skills/recursive-decomposition/examples/codebase-analysis.md) | Full walkthrough: multi-file error handling analysis |
-| [`examples/document-aggregation.md`](plugins/recursive-decomposition/skills/recursive-decomposition/examples/document-aggregation.md) | Full walkthrough: multi-document feature extraction |
-
----
-
-## When NOT to Use
-
-The skill is designed for **complex, long-context tasks**. For simple operations:
-
-- Single file edits → Direct processing is faster
-- Specific function lookup → Use Grep directly
-- Tasks < 30k tokens → Overhead not worth it
-- Time-critical operations → Latency matters more than completeness
+| [`references/codebase-analysis.md`](plugins/recursive-decomposition/skills/recursive-decomposition/references/codebase-analysis.md) | Full walkthrough: multi-file error handling analysis |
+| [`references/document-aggregation.md`](plugins/recursive-decomposition/skills/recursive-decomposition/references/document-aggregation.md) | Full walkthrough: multi-document feature extraction |
 
 ---
 
@@ -314,12 +323,7 @@ This skill is based on the **Recursive Language Models** research paper. Huge th
 
 ## Contributing
 
-Contributions welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch
-3. Test your changes with Claude Code
-4. Submit a pull request
+Contributions welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 

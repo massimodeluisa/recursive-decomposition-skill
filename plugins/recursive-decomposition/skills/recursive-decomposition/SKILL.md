@@ -1,8 +1,6 @@
 ---
 name: recursive-decomposition
 description: Based on the Recursive Language Models (RLM) research by Zhang, Kraska, and Khattab (2025), this skill provides strategies for handling tasks that exceed comfortable context limits through programmatic decomposition and recursive self-invocation. Triggers on phrases like "analyze all files", "process this large document", "aggregate information from", "search across the codebase", or tasks involving 10+ files or 50k+ tokens.
-version: 1.0.1
-license: MIT
 ---
 
 # Recursive Decomposition Guidelines
@@ -13,8 +11,8 @@ Consult these resources as needed:
 
 - ./references/rlm-strategies.md -- Detailed decomposition patterns from the RLM paper
 - ./references/cost-analysis.md -- When to apply recursive vs. direct approaches
-- ./examples/codebase-analysis.md -- Full walkthrough of codebase-wide analysis
-- ./examples/document-aggregation.md -- Multi-document information extraction
+- ./references/codebase-analysis.md -- Full walkthrough of codebase-wide analysis
+- ./references/document-aggregation.md -- Multi-document information extraction
 
 ## Core Principles
 

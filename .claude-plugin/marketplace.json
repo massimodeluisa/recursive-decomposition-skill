@@ -11,12 +11,7 @@
     {
       "name": "recursive-decomposition",
       "source": "./plugins/recursive-decomposition",
-      "description": "Recursive decomposition strategies for long-context tasks",
-      "version": "1.0.1",
-      "author": {
-        "name": "Massimo De Luisa",
-        "email": "massimodeluisa@me.com"
-      }
+      "description": "Agent skill for handling long-context tasks through recursive decomposition strategies based on RLM research (Zhang, Kraska, Khattab 2025)"
     }
   ]
 }
