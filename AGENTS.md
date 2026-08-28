@@ -1,234 +1,34 @@
-# Recursive Decomposition Skills Repository
+# Agents: recursive-decomposition skill
 
-This repository contains Claude Code plugins for handling long-context tasks through recursive decomposition strategies. It serves as a marketplace for distributing these skills.
+Entrypoint for agentic tooling working on this repository.
 
-## Repository Structure
+## Read these first (mandatory)
 
-```
-.claude-plugin/
-  marketplace.json          # Marketplace catalog - lists all plugins
-plugins/
-  recursive-decomposition/  # Plugin for recursive decomposition strategies
-    .claude-plugin/
-      plugin.json           # Plugin manifest
-    skills/
-      recursive-decomposition/
-        SKILL.md            # Main skill file
-        references/         # Supporting documentation
-        examples/           # Walkthrough examples
-    README.md
-```
+| Doc | Why |
+|-----|-----|
+| **[CONVENTIONS.md](./CONVENTIONS.md)** | Skill format, sources, prose, git, versioning, validation |
+| **[CONTRIBUTING.md](./CONTRIBUTING.md)** | Change workflow |
+| **[skills/recursive-decomposition/SKILL.md](./skills/recursive-decomposition/SKILL.md)** | The skill itself |
+| **[CHANGELOG.md](./CHANGELOG.md)** | Release history |
 
-## Creating Claude Code Plugins
+Follow **CONVENTIONS.md** for every change. This file is a short checklist only. `CLAUDE.md` is a symlink to this file.
 
-### Plugin Directory Structure
+## Language policy
 
-Each plugin follows this structure:
+- Markdown, manifests, commits: English only.
 
-```
-my-plugin/
-├── .claude-plugin/
-│   └── plugin.json         # Required: Plugin manifest (only file in this dir)
-├── skills/                 # Skill directories
-│   └── skill-name/
-│       ├── SKILL.md        # Required: Main skill file
-│       ├── references/     # Optional: Supporting docs
-│       └── scripts/        # Optional: Utility scripts
-└── README.md               # Optional: Plugin documentation
-```
+## Non-negotiables
 
-### Plugin Manifest (`plugin.json`)
+1. Every number or claim about the paper cites arXiv:2512.24601; nothing invented.
+2. `SKILL.md` stays under 500 lines with a single-line, double-quoted description.
+3. The skill name and the plugin name never change.
+4. Bump `version` in `.claude-plugin/plugin.json` and `SKILL.md` together on every user-visible change.
+5. No em dash, no filler, no co-author trailers, no Python.
 
-```json
-{
-  "name": "my-plugin",
-  "version": "1.0.0",
-  "description": "Brief description of the plugin",
-  "author": {
-    "name": "Your Name",
-    "email": "you@example.com"
-  }
-}
-```
-
-Required fields:
-- `name`: Unique identifier in kebab-case
-
-Optional fields:
-- `version`: Semantic versioning (e.g., `"1.0.0"`)
-- `description`: Brief explanation shown in plugin manager
-- `author`: Object with `name` and optionally `email`
-
-### Skill Files (`SKILL.md`)
-
-Skills teach Claude how to perform specific tasks. Each skill has a `SKILL.md` file with YAML frontmatter:
-
-```markdown
----
-name: skill-name
-description: What the skill does and when to use it. Claude uses this for auto-discovery.
----
-
-# Skill Title
-
-Skill content goes here...
-```
-
-**Frontmatter fields:**
-
-| Field | Required | Description |
-|-------|----------|-------------|
-| `name` | Yes | Skill identifier (lowercase, hyphens, max 64 chars) |
-| `description` | Yes | When to use this skill (max 1024 chars) - crucial for auto-discovery |
-| `allowed-tools` | No | Tools Claude can use without permission (e.g., `"Read, Grep, Bash(node:*)"`) |
-| `version` | No | Skill version |
-| `license` | No | License identifier |
-
-**Best practices:**
-- Keep `SKILL.md` under 500 lines
-- Use `references/` subdirectory for detailed documentation
-- Write descriptions that match what users naturally say
-- Include keywords users would search for
-
-### Supporting Files
-
-Skills can include supporting files:
-
-```
-skills/my-skill/
-├── SKILL.md                 # Main skill (required)
-├── references/              # Detailed documentation
-│   ├── setup.md
-│   └── examples.md
-└── scripts/                 # Utility scripts
-    ├── fetch.js
-    └── validate.js
-```
-
-Reference these in your SKILL.md:
-```markdown
-## References
-
-Consult these resources as needed:
-- ./references/setup.md -- Setup and configuration guide
-- ./references/examples.md -- Usage examples
-```
-
-## Marketplace Configuration
-
-The `.claude-plugin/marketplace.json` file catalogs all plugins:
-
-```json
-{
-  "name": "marketplace-name",
-  "owner": {
-    "name": "Owner Name",
-    "email": "owner@example.com"
-  },
-  "metadata": {
-    "description": "Marketplace description"
-  },
-  "plugins": [
-    {
-      "name": "plugin-name",
-      "source": "./plugins/plugin-name",
-      "description": "What the plugin does."
-    }
-  ]
-}
-```
-
-**Plugin entry fields:**
-- `name` (required): Plugin identifier in kebab-case
-- `source` (required): Relative path to plugin directory
-- `description`: Brief description for the plugin list
-
-## Adding a New Plugin
-
-1. Create the plugin directory structure:
-   ```bash
-   mkdir -p plugins/my-plugin/.claude-plugin
-   mkdir -p plugins/my-plugin/skills/my-skill
-   ```
-
-2. Create `plugins/my-plugin/.claude-plugin/plugin.json`:
-   ```json
-   {
-     "name": "my-plugin",
-     "version": "1.0.0",
-     "description": "What the plugin does",
-     "author": {
-       "name": "Your Name",
-       "email": "you@example.com"
-     }
-   }
-   ```
-
-3. Create `plugins/my-plugin/skills/my-skill/SKILL.md`:
-   ```markdown
-   ---
-   name: my-skill
-   description: When to use this skill and what it does.
-   ---
-
-   # My Skill
-
-   Content...
-   ```
-
-4. Create `plugins/my-plugin/README.md`:
-   ```markdown
-   # My Plugin
-
-   Brief description.
-
-   ## License
-
-   MIT
-   ```
-
-5. Add to `.claude-plugin/marketplace.json`:
-   ```json
-   {
-     "name": "my-plugin",
-     "source": "./plugins/my-plugin",
-     "description": "What the plugin does."
-   }
-   ```
-
-6. Add to `README.md` installation examples:
-   ```
-   /plugin install my-plugin
-   ```
-
-## Testing Plugins
-
-Test plugins locally before publishing:
+## Commands
 
 ```bash
-# Load plugin for testing
-claude --plugin-dir ./plugins/recursive-decomposition
-
-# Validate plugin structure
-claude plugin validate ./plugins/recursive-decomposition
+bash .github/scripts/validate-skill.sh
+npx -y skills@latest add . -l
+claude plugin validate .
 ```
-
-## User Installation
-
-Users install plugins from this marketplace:
-
-```bash
-# Add the marketplace
-/plugin marketplace add recursive-decomposition-skill
-
-# Install a plugin
-/plugin install recursive-decomposition
-```
-
-## Conventions in This Repo
-
-- **Plugin names**: Use kebab-case (e.g., `recursive-decomposition`)
-- **Skill names**: Use kebab-case (e.g., `recursive-decomposition`)
-- **File names**: Use kebab-case for all files
-- **License**: MIT for all plugins
-- **README.md**: Include in each plugin with brief description and license

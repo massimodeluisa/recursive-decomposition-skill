@@ -1,31 +1,38 @@
-# Contributing to Recursive Decomposition Skills
+# Contributing
 
-We welcome contributions! This implementation of recursive decomposition strategies for Claude Code is open for improvements.
+Thanks for improving the `recursive-decomposition` skill.
 
-## Development Workflow
+> Rules live in [CONVENTIONS.md](./CONVENTIONS.md). Agent entrypoint: [AGENTS.md](./AGENTS.md).
 
-1.  **Fork & Clone**: Start by forking the repository.
-2.  **Plugin Structure**: Understanding the `plugins/` directory layout.
-3.  **Creating Skills**: Guidelines for writing `SKILL.md` files (clear triggers, concise instructions).
+## Before you start
 
-## Testing Changes
+1. Read CONVENTIONS.md.
+2. Branch from an up-to-date `main`: `fix/...`, `feat/...`, `docs/...`.
+3. Confirm the toolchain: bash, jq, Node 22 (`npx`), `claude` CLI (optional, for `claude plugin validate`).
 
-Before submitting, you **must** test your changes locally:
+## What to contribute
+
+| Welcome | Needs an issue first |
+|---------|----------------------|
+| Corrections that cite the paper or a reproducible test | Changing the protocol or the thresholds |
+| New worked examples under `references/` | Adding executable scripts to the skill |
+| Shorter, clearer wording | Splitting the skill into several skills |
+| Agent-specific notes that stay out of the skill body | Non-English content |
+
+## Verify
 
 ```bash
-# Load the plugin from your local directory
-claude --plugin-dir ./plugins/recursive-decomposition
+bash .github/scripts/validate-skill.sh
+npx -y skills@latest add . -l
+claude plugin validate .
 ```
 
-- Verify that the skill triggers when appropriate (e.g., "analyze these 20 files").
-- Verify that the decomposition strategy works as expected.
+## Pull request
 
-## Submission Guidelines
+- One topic per PR.
+- English description: what changed and the source of every new claim.
+- CI must be green.
 
-- **One Skill Per Pull Request**: Keep PRs focused.
-- **Documentation**: Ensure `SKILL.md` frontmatter is correct.
-- **Examples**: Provide a walkthrough in `examples/` if adding a complex new strategy.
+## License
 
-## Code of Conduct
-
-Be respectful and constructive.
+Contributions are licensed under the repository [MIT license](./LICENSE).
