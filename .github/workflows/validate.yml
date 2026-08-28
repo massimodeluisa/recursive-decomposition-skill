@@ -1,0 +1,22 @@
+name: validate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      DISABLE_TELEMETRY: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Validate skill files
+        run: bash .github/scripts/validate-skill.sh
+      - name: Discover the skill with the skills CLI
+        run: |
+          npx -y skills@latest add . -l 2>&1 | tee discovery.log
+          grep -q "recursive-decomposition" discovery.log
