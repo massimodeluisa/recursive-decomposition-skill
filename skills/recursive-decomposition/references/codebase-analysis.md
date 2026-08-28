@@ -1,5 +1,7 @@
 # Example: Codebase-Wide Error Handling Analysis
 
+Tool calls below use Claude Code names (`Glob`, `Grep`, `Task`); map them to your agent's file search, content search and sub-agent tools.
+
 This example demonstrates recursive decomposition for analyzing error handling patterns across a large codebase.
 
 ## Task

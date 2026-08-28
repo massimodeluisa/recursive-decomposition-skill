@@ -1,185 +1,99 @@
 ---
 name: recursive-decomposition
-description: Based on the Recursive Language Models (RLM) research by Zhang, Kraska, and Khattab (2025), this skill provides strategies for handling tasks that exceed comfortable context limits through programmatic decomposition and recursive self-invocation. Triggers on phrases like "analyze all files", "process this large document", "aggregate information from", "search across the codebase", or tasks involving 10+ files or 50k+ tokens.
+description: "Handle tasks that exceed the context window by decomposing them: size and filter the input, chunk it, run recursive sub-agents on independent parts, verify on small windows, and synthesise programmatically, following the Recursive Language Models (RLM) research by Zhang, Kraska and Khattab (2025). Use when a task spans 10+ files or 50k+ tokens, or when asked to analyze all files, process a large document, aggregate information from many sources, or search across a codebase. Triggers: long context, context rot, large codebase, many files, big document, multi-document, aggregate, summarize everything, codebase-wide, recursive, sub-agents, map-reduce."
+license: MIT
+metadata:
+  author: massimodeluisa
+  version: "1.1.0"
+  paper: https://arxiv.org/abs/2512.24601
 ---
 
-# Recursive Decomposition Guidelines
+# Recursive Decomposition
+
+Long inputs degrade model quality: details get missed, distant parts get linked by guesswork, reasoning drifts. The RLM paper calls it context rot. Instead of loading everything into the context window, treat the input as an environment you query with tools: size it, narrow it, split it, delegate independent parts to sub-agents, verify on small windows, and merge results programmatically. Based on [Recursive Language Models](https://arxiv.org/abs/2512.24601) (Zhang, Kraska, Khattab, 2025).
+
+## How to use
+
+- `/recursive-decomposition`: apply the protocol below to the current task.
+- `/recursive-decomposition <path or question>`: size that input first, then run the protocol on it.
+
+## When it applies
+
+| Situation | Approach |
+|-----------|----------|
+| 10+ files, 50k+ tokens, or a multi-hop question across scattered sources | Decompose (this skill) |
+| 30k to 50k tokens | Decompose when completeness matters; otherwise read directly |
+| Under 30k tokens, one file, or a localized answer | Read directly |
+
+## Protocol
+
+1. **Size the input** before reading anything: count files (glob, `find`), lines (`wc -l`), bytes (`ls -lh`), pages for PDFs.
+2. **Filter** the search space with searches (content search, file patterns, keywords, file types) before opening any file. Chain filters: file type, then keyword, then meaning.
+3. **Chunk** what remains: natural units (functions, classes, sections), line ranges, or keyword partitions. Batches of 5 to 10 files.
+4. **Recurse**: give each independent batch to a sub-agent with a self-contained brief (files, question, output schema); run batches in parallel.
+5. **Verify** the synthesised answer on a smaller window: extract the minimal evidence and re-check it; settle disagreements with a targeted re-read.
+6. **Synthesise programmatically**: aggregate the structured results, deduplicate, categorise, then write the answer with file and line references.
+
+## Rules
+
+- MUST size the input before reading it
+- MUST search before reading a directory; NEVER list a tree recursively as a substitute for search
+- MUST read large files by line range: over 2,000 lines or 50 KB never in one read; PDFs over 100 pages or 30 MB by metadata or split
+- NEVER load more than 5 files into the main context without a written batch plan
+- MUST give every sub-agent its own context: the files, the question, the output schema
+- MUST spot-check the synthesised result against the sources before answering
+- SHOULD read definitions first (`grep -n "function"`) and bodies later; tables of contents and abstracts before full text
+- NEVER run the same query over the same content in several sub-agents; partition once into disjoint batches
+
+## Tools, agent-agnostic
+
+| Need | Use |
+|------|-----|
+| Find files | the file search or glob tool, or `find` |
+| Find content | the content search or grep tool, never a full read |
+| Size | `wc -l`, `ls -lh`, page count |
+| Read | the file reader with an offset and a limit, or `sed -n 'START,ENDp'` |
+| Delegate | the sub-agent or task tool, one brief per batch |
+| Aggregate | a scratch file or structured notes, then one final pass |
+
+Tool names differ between agents (Claude Code, Codex, Cursor, Gemini CLI); map the row to your agent's equivalent.
+
+## Patterns
+
+### Codebase analysis
+
+"Find all error handling patterns." Glob the source files, grep `catch|throw|Error|except`, batch the matches by module (5 to 10 files), one sub-agent per batch with a fixed report schema, merge into a categorised summary with file references. Worked example: [references/codebase-analysis.md](references/codebase-analysis.md).
+
+### Multi-document question answering
+
+"What features are planned across all PRDs?" Glob the documents, size them, define an extraction schema (name, priority, status, quarter), one sub-agent per document group, deduplicate and categorise, spot-check three entries against the sources. Worked example: [references/document-aggregation.md](references/document-aggregation.md).
+
+### Aggregation
+
+"Summarise all TODO comments." Grep `TODO|FIXME|HACK`, group by module, extract context and priority per group, produce a prioritised list.
+
+### Long output
+
+Split the output into sections, generate each independently, store intermediate results in a file, stitch them with a coherence pass.
+
+## Cost and quality
+
+Decomposition spends coordination tokens and keeps quality: in the RLM paper, RLM runs were about 3x cheaper than summarisation baselines and scaled from 2^14 to 2^18 tokens with higher accuracy on multi-hop tasks. Thresholds and break-even: [references/cost-analysis.md](references/cost-analysis.md).
+
+## Anti-patterns
+
+| Anti-pattern | Fix |
+|--------------|-----|
+| Reading everything first "to get context" | Size, filter, then read by range |
+| Decomposing a five-file task | Read directly |
+| Sub-agents without the question or the schema | Self-contained briefs |
+| Trusting the merged answer | Spot-check on a small window |
+| Re-querying the same content in several sub-agents | Partition once, disjoint batches |
 
 ## References
 
-Consult these resources as needed:
-
-- ./references/rlm-strategies.md -- Detailed decomposition patterns from the RLM paper
-- ./references/cost-analysis.md -- When to apply recursive vs. direct approaches
-- ./references/codebase-analysis.md -- Full walkthrough of codebase-wide analysis
-- ./references/document-aggregation.md -- Multi-document information extraction
-
-## Core Principles
-
-**CRITICAL: Treat inputs as environmental variables, not immediate context.**
-
-Most tasks fail when context is overloaded. Instead of loading entire contexts into the processing window, treat inputs as **environmental variables** accessible through code execution. Decompose problems recursively, process segments independently, and aggregate results programmatically.
-
-**Progressive Disclosure**: Load information only when necessary. Start high-level to map the territory, then dive deep into specific areas.
-
-### When Recursive Decomposition is Required
-
--   Tasks involving 10+ files
--   Input exceeding ~50k tokens where single-prompt context is insufficient
--   Multi-hop questions requiring evidence from multiple scattered sources
--   Codebase-wide pattern analysis or migration planning
-
-### When Direct Processing Works
-
--   Small contexts (<30k tokens)
--   Single file analysis
--   Linear complexity tasks with manageable inputs
-
-## Operational Rules
-
--   Always identify the search space size first.
--   Always use `grep` or `glob` before `view_file` on directories.
--   Always partition lists > 10 items into batches.
--   Never read more than 5 files into context without a specific plan.
--   Verify synthesized answers by spot-checking source material.
--   Mitigate "context rot" by verifying answers on smaller windows.
--   **Treat yourself as an autonomous agent, not just a passive responder.**
-
-## Large File Handling Protocols
-
-**CRITICAL**: Do NOT read large files directly into context.
-
-1.  **Check Size First**: Always run `wc -l` (lines) or `ls -lh` (size) before `view_file`.
-2.  **Hard Limits**:
-    *   **Text/Code**: > 2,000 lines or > 50KB -> **MUST** use `view_file` with `start_line`/`end_line` or `head`/`tail`.
-    *   **PDFs**: > 30MB or > 100 pages -> **MUST** be split or processed by metadata only.
-3.  **Strategy**:
-    *   For code: Read definitions first (`grep -n "function" ...`) then read specific bodies.
-    *   For text: Read Table of Contents or Abstract first.
-
-## Tool Preferences
-
--   `grep` / `glob` not `ls -R` (unless mapping structure).
--   `view_file` with line ranges (offset/limit) not full file reads for huge files.
--   `wc -l` / `ls -lh` before reading unknown files.
--   `run_command` (grep) not `read_file` for searching.
--   `task` tool for sub-agents (recurse).
-
-## Empowering Agentic Behavior
-
-To maximize effectiveness:
-
--   **Self-Correction**: Always verify your own work. If a result seems empty or wrong, debug the approach (e.g., check grep arguments) before giving up.
--   **Aggressive Context Management**: Regularly clear irrelevant history. Don't let the context window rot with dead ends.
--   **Plan First**: For any task > 3 steps, write a mini-plan.
--   **Safe YOLO Mode**: When appropriate (e.g., read-only searches), proceed with confidence without asking for permission on every single step, but stop for critical actions.
-
-## Cost-Performance Tradeoffs
-
--   **Smaller contexts**: Direct processing may be more efficient.
--   **Larger contexts**: Recursive decomposition becomes necessary.
--   **Threshold**: Consider decomposition when inputs exceed ~30k tokens or span 10+ files.
-
-Balance thoroughness against computational cost. For time-sensitive tasks, apply aggressive filtering. For comprehensive analysis, prefer exhaustive decomposition.
-
-## Anti-Patterns to Avoid
-
--   **Excessive sub-calling**: Avoid redundant queries over the same content.
--   **Premature decomposition**: Simple tasks don't need recursive strategies.
--   **Lost context**: Ensure sub-agents have sufficient context for their sub-tasks.
--   **Unverified synthesis**: Always spot-check aggregated results.
-
-## Scalability (Chunking & filtering)
-
-### 1. Filter Before Deep Analysis
-
-Narrow the search space before detailed processing:
-
-```
-# Instead of reading all files into context:
-1. Use Grep/Glob to identify candidate files by pattern
-2. Filter candidates using domain-specific keywords
-3. Only deeply analyze the filtered subset
-```
-
-Apply model priors about domain terminology to construct effective filters. For code tasks, filter by function names, imports, or error patterns before full file analysis.
-
-### 2. Strategic Chunking
-
-Partition inputs for parallel or sequential sub-processing:
-
--   **Uniform chunking**: Split by line count, character count, or natural boundaries (paragraphs, functions, files).
--   **Semantic chunking**: Partition by logical units (classes, sections, topics).
--   **Keyword-based partitioning**: Group by shared characteristics.
-
-Process each chunk independently, then synthesize results.
-
-### 3. Incremental Output Construction
-
-For generating long outputs:
-
-```
-1. Break output into logical sections
-2. Generate each section independently
-3. Store intermediate results (in memory or files)
-4. Stitch sections together with coherence checks
-```
-
-## Agent Behavior
-
-### Recursive Sub-Queries
-
-Invoke sub-agents (via Task tool) for independent segments:
-
-```
-For large analysis:
-1. Partition the problem into independent sub-problems
-2. Launch parallel agents for each partition
-3. Collect and synthesize sub-agent results
-4. Verify synthesized answer if needed
-```
-
-### Answer Verification
-
-Mitigate context degradation by verifying answers on smaller windows:
-
-```
-1. Generate candidate answer from full analysis
-2. Extract minimal evidence needed for verification
-3. Re-verify answer against focused evidence subset
-4. Resolve discrepancies through targeted re-analysis
-```
-
-# Implementation Patterns
-
-## Pattern A: Codebase Analysis
-
-Task: "Find all error handling patterns in the codebase"
-
-**Approach:**
-1.  Glob for relevant file types (`*.ts`, `*.py`, etc.)
-2.  Grep for error-related keywords (`catch`, `except`, `Error`, `throw`)
-3.  Partition matching files into batches of 5-10
-4.  Launch parallel Explore agents per batch
-5.  Aggregate findings into categorized summary
-
-## Pattern B: Multi-Document QA
-
-Task: "What features are mentioned across all PRD documents?"
-
-**Approach:**
-1.  Glob for document files (`*.md`, `*.txt` in `/docs`)
-2.  For each document: extract feature mentions via sub-agent
-3.  Aggregate extracted features
-4.  Deduplicate and categorize
-5.  Verify completeness by spot-checking
-
-## Pattern C: Information Aggregation
-
-Task: "Summarize all TODO comments in the project"
-
-**Approach:**
-1.  Grep for `TODO`/`FIXME`/`HACK` patterns
-2.  Group by file or module
-3.  Process each group to extract context and priority
-4.  Synthesize into prioritized action list
+- [references/rlm-strategies.md](references/rlm-strategies.md): decomposition strategies from the paper
+- [references/cost-analysis.md](references/cost-analysis.md): when to decompose, break-even thresholds
+- [references/codebase-analysis.md](references/codebase-analysis.md): worked example, error handling across a codebase
+- [references/document-aggregation.md](references/document-aggregation.md): worked example, feature extraction across PRDs
+- Paper: [Recursive Language Models](https://arxiv.org/abs/2512.24601), Zhang, Kraska, Khattab, arXiv:2512.24601

@@ -1,5 +1,7 @@
 # Example: Multi-Document Feature Aggregation
 
+Tool calls below use Claude Code names (`Glob`, `Grep`, `Task`); map them to your agent's file search, content search and sub-agent tools.
+
 This example demonstrates recursive decomposition for extracting and aggregating information across multiple documents.
 
 ## Task
