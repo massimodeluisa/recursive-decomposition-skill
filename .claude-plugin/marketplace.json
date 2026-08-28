@@ -5,13 +5,22 @@
     "email": "massimodeluisa@me.com"
   },
   "metadata": {
-    "description": "Recursive decomposition strategies for long-context tasks"
+    "description": "Agent skill for long-context work: decompose tasks that exceed the context window with filtering, chunking, recursive sub-agents and verification, based on the Recursive Language Models research."
   },
   "plugins": [
     {
       "name": "recursive-decomposition",
-      "source": "./plugins/recursive-decomposition",
-      "description": "Agent skill for handling long-context tasks through recursive decomposition strategies based on RLM research (Zhang, Kraska, Khattab 2025)"
+      "source": "./",
+      "description": "Agent skill for long-context work: decompose tasks that exceed the context window with filtering, chunking, recursive sub-agents and verification, based on the Recursive Language Models research.",
+      "metadata": {
+        "category": "productivity",
+        "tags": [
+          "long-context",
+          "recursive-decomposition",
+          "rlm",
+          "context-engineering"
+        ]
+      }
     }
   ]
 }

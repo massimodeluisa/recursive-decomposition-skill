@@ -1,0 +1,21 @@
+{
+  "name": "recursive-decomposition",
+  "version": "1.1.0",
+  "description": "Agent skill for long-context work: decompose tasks that exceed the context window with filtering, chunking, recursive sub-agents and verification, based on the Recursive Language Models research.",
+  "author": {
+    "name": "Massimo De Luisa",
+    "email": "massimodeluisa@me.com",
+    "url": "https://massimo.deluisa.bio"
+  },
+  "homepage": "https://github.com/massimodeluisa/recursive-decomposition-skill",
+  "repository": "https://github.com/massimodeluisa/recursive-decomposition-skill",
+  "license": "MIT",
+  "keywords": [
+    "recursive-decomposition",
+    "long-context",
+    "rlm",
+    "context-engineering",
+    "claude-code",
+    "agent-skills"
+  ]
+}
