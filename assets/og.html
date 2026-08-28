@@ -1,0 +1,60 @@
+<!-- Social preview source. Render from the repository root with: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=2 --window-size=1280,640 --screenshot=/tmp/og-2x.png "file://$PWD/assets/og.html" && magick /tmp/og-2x.png -resize 50% -strip assets/og.png. Needs the Geist, Geist Mono and MesloLGM Nerd Font families installed. Glyphs in the bottom strip are Nerd Fonts icons (see nerdfonts.com). -->
+<!doctype html><html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1280px;height:640px;overflow:hidden;background:#0a0b16;color:#f4f4f5;font-family:"Geist",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.bg{position:absolute;inset:0;background:
+ radial-gradient(900px 520px at 88% 12%, rgba(124,58,237,.30), transparent 60%),
+ radial-gradient(700px 420px at 8% 100%, rgba(59,130,246,.22), transparent 60%),
+ #0a0b16}
+.grain{position:absolute;inset:0;opacity:.07;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='200' height='200' filter='url(%23n)' opacity='.9'/></svg>")}
+.nf{font-family:"MesloLGM Nerd Font","Symbols Nerd Font",monospace}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid rgba(255,255,255,.14);border-radius:999px;font:500 17px/1 "Geist";color:#c7c9d1;background:rgba(255,255,255,.03)}
+.chip b{color:#a78bfa;font-weight:600}
+.cmd{font:500 22px/1 "Geist Mono";color:#c4b5fd;background:rgba(124,58,237,.10);border:1px solid rgba(167,139,250,.35);border-radius:10px;padding:14px 18px;display:inline-block}
+.cmd span{color:#8b8f9a}
+h1{font-weight:600;letter-spacing:-.02em;line-height:1.02}
+.grid{display:grid;gap:10px 14px}
+.grid span{font-size:34px;line-height:1;color:#3a3f4b;text-align:center}
+.grid span:nth-child(7n+3){color:#ffce3e}
+.grid span:nth-child(11n+5){color:#5ba3d9}
+.grid span:nth-child(13n+9){color:#e6e7ea}
+.strip{display:flex;gap:26px;justify-content:center;font-size:40px;line-height:1;color:#3a3f4b}
+.strip span:nth-child(5n+2){color:#a78bfa}.strip span:nth-child(7n+4){color:#60a5fa}
+.fade{position:absolute;inset:0;pointer-events:none}
+</style></head><body><div class="bg"></div><div class="grain"></div>
+<div style="position:absolute;left:0;right:0;top:54px;text-align:center">
+  <img src="logo-dark.png" style="width:190px;display:inline-block">
+  <h1 style="font-size:54px;margin-top:22px">Decompose long-context tasks.<br>Keep the context small.</h1>
+  <div class="cmd" style="margin-top:26px"><span>$</span> npx skills add massimodeluisa/recursive-decomposition-skill</div>
+  <div style="display:flex;gap:10px;margin-top:22px;justify-content:center"><span class="chip">Agent Skill</span><span class="chip"><b>RLM</b> research, arXiv 2512.24601</span><span class="chip"><b>v1.1.0</b></span><span class="chip"><b>MIT</b></span></div>
+</div>
+<div class="strip nf" style="position:absolute;left:0;right:0;bottom:44px">
+<span>󰙅</span>
+<span>󰉋</span>
+<span></span>
+<span>󰈙</span>
+<span></span>
+<span></span>
+<span>󰚩</span>
+<span>󰧑</span>
+<span></span>
+<span>󰏓</span>
+<span>󰈮</span>
+<span></span>
+<span></span>
+<span>󰍉</span>
+<span>󰆦</span>
+<span>󰒪</span>
+<span></span>
+<span></span>
+<span>󱘎</span>
+<span>󱁉</span>
+<span></span>
+<span>󰕰</span>
+<span>󰺮</span>
+<span></span>
+<span>󰈢</span>
+<span>󰦻</span>
+</div>
+<div class="fade" style="background:linear-gradient(90deg,#0a0b16 0%,transparent 12%,transparent 88%,#0a0b16 100%)"></div>
+</body></html>
