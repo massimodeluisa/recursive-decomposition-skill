@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Validates the recursive-decomposition skill tree: frontmatter, size, links, manifests, prose.
+# Check skill frontmatter, size, relative links, plugin manifests, and the no-em-dash rule.
 set -u
 
 root="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -53,7 +53,7 @@ if [ -f "$root/.claude-plugin/plugin.json" ] && [ -f "$root/.claude-plugin/marke
   [ "$(jq '.plugins[0] | has("version")' "$root/.claude-plugin/marketplace.json")" = "false" ] || fail "marketplace.json: the plugin entry must not pin a version"
 fi
 
-for doc in "$root"/README.md "$root"/AGENTS.md "$root"/CONVENTIONS.md "$root"/CONTRIBUTING.md "$root"/CHANGELOG.md "$skill" "$skill_dir"/references/*.md; do
+for doc in "$root"/README.md "$root"/AGENTS.md "$root"/CONVENTIONS.md "$root"/CONTRIBUTING.md "$root"/CHANGELOG.md "$skill" "$skill_dir"/references/*.md "$skill_dir"/evals/*.md; do
   [ -f "$doc" ] || continue
   if grep -q $'\xe2\x80\x94' "$doc"; then fail "${doc#"$root"/}: contains an em dash (U+2014)"; fi
 done

@@ -14,9 +14,11 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-      - name: Validate skill files
+      - name: Check skill files
         run: bash .github/scripts/validate-skill.sh
-      - name: Discover the skill with the skills CLI
+      - name: Check eval fixtures and gold
+        run: bash .github/scripts/eval-skill.sh check
+      - name: Confirm the skills CLI finds this skill
         run: |
           npx -y skills@latest add . -l 2>&1 | tee discovery.log
           grep -q "recursive-decomposition" discovery.log

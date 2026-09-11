@@ -1,45 +1,43 @@
-# Example: Multi-Document Feature Aggregation
+# Example: features across many PRDs
 
 Tool calls below use Claude Code names (`Glob`, `Grep`, `Task`); map them to your agent's file search, content search and sub-agent tools.
 
-This example demonstrates recursive decomposition for extracting and aggregating information across multiple documents.
+Walkthrough of the protocol on a made-up docs tree. File counts and feature counts are the scenario, not a paper result.
 
 ## Task
-"What features are planned across all our PRD documents? Create a consolidated feature roadmap."
 
-## Decomposition Strategy
+"What features are planned across all our PRD documents? Build one roadmap."
 
-### Phase 1: Discover Documents
+## 1. Find the documents
 
-```
-Step 1: Find all PRD documents
-- Glob("**/PRD*.md") → 12 files
-- Glob("**/prd-*.md") → 5 files
-- Glob("docs/product/*.md") → 8 files
-- Deduplicate: 18 unique PRD documents
-
-Step 2: Assess total size
-- Total: ~85k tokens across all documents
-- Decision: Recursive decomposition required
+```text
+Glob("**/PRD*.md")         → 12 files
+Glob("**/prd-*.md")        → 5 files
+Glob("docs/product/*.md")  → 8 files
+dedupe: 18 unique files
 ```
 
-### Phase 2: Categorize Documents
+Size them before reading. Here that is about 85k tokens, so decompose.
 
+## 2. Group, then drop dead weight
+
+A header scan, not a full read:
+
+```text
+Q1           4 docs  ~20k tokens
+Q2           5 docs  ~25k tokens
+Q3           4 docs  ~18k tokens
+technical    3 docs  ~12k tokens
+archived     2 docs  exclude
 ```
-Quick scan of document headers:
-- Q1 PRDs: 4 documents (~20k tokens)
-- Q2 PRDs: 5 documents (~25k tokens)
-- Q3 PRDs: 4 documents (~18k tokens)
-- Technical PRDs: 3 documents (~12k tokens)
-- Archived: 2 documents (exclude)
 
-Active documents: 16 (~75k tokens)
-```
+Sixteen active documents, about 75k tokens.
 
-### Phase 3: Define Extraction Schema
+## 3. Extraction schema
 
-```
-For each document, extract:
+Every sub-agent fills the same shape:
+
+```text
 {
   "document": "filename",
   "product_area": "string",
@@ -57,11 +55,11 @@ For each document, extract:
 }
 ```
 
-### Phase 4: Parallel Extraction
+Without a schema the merge is a pile of prose.
 
-```
-Launch extraction agents by category:
+## 4. One agent per group
 
+```text
 Agent 1 (Q1 PRDs):
 Task(subagent_type="Explore", prompt="""
 Read each PRD in docs/product/q1/:
@@ -74,128 +72,93 @@ Extract features using this schema: [schema]
 Return structured JSON for each document.
 """)
 
-Agent 2 (Q2 PRDs): [similar for Q2 documents]
-Agent 3 (Q3 PRDs): [similar for Q3 documents]
-Agent 4 (Technical PRDs): [similar for technical documents]
+Agent 2: Q2 documents, same schema
+Agent 3: Q3 documents, same schema
+Agent 4: technical PRDs, same schema
 ```
 
-### Phase 5: Aggregate and Deduplicate
+Name the files in the brief. "The Q1 folder" is not a brief.
 
-```
-Collect from all agents:
-- Agent 1: 12 features extracted
-- Agent 2: 15 features extracted
-- Agent 3: 11 features extracted
-- Agent 4: 8 features extracted
-- Total: 46 features
+## 5. Dedupe
 
-Deduplication:
-- "Dark mode" mentioned in 3 PRDs → merge
-- "API v2" mentioned in 2 PRDs → merge
-- After dedup: 38 unique features
-```
+```text
+Q1 12 features
+Q2 15
+Q3 11
+technical 8
+raw total 46
 
-### Phase 6: Build Dependency Graph
-
-```
-Analyze dependencies:
-- "Dashboard v2" depends on "API v2"
-- "Mobile notifications" depends on "Auth improvements"
-- "Reporting" depends on "Dashboard v2", "Data pipeline"
-
-Create directed graph of dependencies
-Identify critical path
+"Dark mode" in three PRDs → one row
+"API v2" in two PRDs → one row
+after dedupe: 38
 ```
 
-### Phase 7: Generate Consolidated Roadmap
+## 6. Dependencies
 
+```text
+Dashboard v2 → API v2
+Mobile notifications → Auth improvements
+Reporting → Dashboard v2, Data pipeline
 ```
-# Feature Roadmap (Consolidated from 16 PRDs)
 
-## Q1 2025
-### P0 - Critical
-1. **Auth Improvements** (PRD-auth-improvements.md)
-   - OAuth2 support
-   - SSO integration
-   Status: In Progress
+A directed graph is enough. Do not invent a critical path the files do not state.
 
-2. **API Versioning** (PRD-api-versioning.md)
-   - v2 API release
-   - Deprecation timeline
-   Status: Planned
+## 7. Roadmap from the merge
 
-### P1 - High Priority
-3. **Dashboard v2** (PRD-dashboard-v2.md)
-   - Depends on: API v2
-   ...
+```text
+# Feature roadmap (16 PRDs)
 
-## Q2 2025
+## Q1
+P0 Auth improvements (PRD-auth-improvements.md)
+   OAuth2, SSO. In progress.
+P0 API versioning (PRD-api-versioning.md)
+   v2, deprecation timeline. Planned.
+P1 Dashboard v2 (PRD-dashboard-v2.md)
+   depends on API v2.
+
+## Q2
 ...
-
-## Dependencies Graph
-[ASCII visualization of dependencies]
-
-## Cross-cutting Concerns
-- Performance: 5 features mention performance requirements
-- Security: 3 features have security implications
-- Mobile: 4 features affect mobile experience
 ```
 
-### Phase 8: Verification
+## 8. Spot-check three rows
 
-```
-Spot-check verification:
-1. Re-read PRD-auth-improvements.md
-   - Verify: OAuth2 support listed as P0 ✓
-   - Verify: Q1 target ✓
+```text
+PRD-auth-improvements.md
+  OAuth2 listed as P0
+  Q1 target
 
-2. Re-read PRD-dashboard-v2.md
-   - Verify: Depends on API v2 ✓
-   - Verify: 4 sub-features extracted ✓
+PRD-dashboard-v2.md
+  depends on API v2
+  four sub-features extracted
 
-3. Cross-check dependency claims
-   - API v2 → Dashboard v2 dependency confirmed ✓
+API v2 → Dashboard v2 still holds in both files
 ```
 
-## Expected Output
+Three is the skill default. If a row fails, re-read that document and rebuild that slice of the merge.
+
+## Output shape
 
 ```markdown
-# Consolidated Feature Roadmap
+# Feature roadmap
 
-## Summary
-- 16 PRDs analyzed
-- 38 unique features identified
-- 12 cross-document dependencies mapped
-- 4 quarters covered
-
-## Feature Matrix
+16 PRDs, 38 features, 12 cross-document dependencies.
 
 | Feature | Priority | Quarter | Status | Dependencies |
 |---------|----------|---------|--------|--------------|
-| Auth Improvements | P0 | Q1 | In Progress | - |
-| API v2 | P0 | Q1 | Planned | - |
+| Auth improvements | P0 | Q1 | In progress | |
+| API v2 | P0 | Q1 | Planned | |
 | Dashboard v2 | P1 | Q1 | Planned | API v2 |
-| Mobile Notifications | P1 | Q2 | Planned | Auth |
-...
+| Mobile notifications | P1 | Q2 | Planned | Auth |
 
-## By Product Area
-### Core Platform (12 features)
-...
-
-### Mobile (8 features)
-...
-
-## Risk Analysis
-- 3 features with unresolved dependencies
-- 2 features with conflicting timelines
-- 1 feature missing stakeholder assignment
+Unresolved dependencies: 3
+Conflicting timelines: 2
+Missing stakeholder: 1
 ```
 
-## Metrics
-
-- **Documents processed:** 16
-- **Features extracted:** 38
-- **Sub-agents used:** 4 (parallel)
-- **Total tokens:** ~75k (distributed across agents)
-- **Verification queries:** 3
-- **Processing pattern:** Map-reduce with verification
+| | |
+|-|-|
+| Documents | 16 |
+| Features after dedupe | 38 |
+| Sub-agents | 4, in parallel |
+| Tokens | ~75k, spread across the four |
+| Verification reads | 3 |

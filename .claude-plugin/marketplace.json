@@ -5,13 +5,13 @@
     "email": "massimodeluisa@me.com"
   },
   "metadata": {
-    "description": "Agent skill for long-context work: decompose tasks that exceed the context window with filtering, chunking, recursive sub-agents and verification, based on the Recursive Language Models research."
+    "description": "Decompose dense codebase-wide, multi-document, and large-PDF work even when it fits the window. Depth-1 sub-agents, then verify. Based on Recursive Language Models (Zhang, Kraska, Khattab, arXiv:2512.24601)."
   },
   "plugins": [
     {
       "name": "recursive-decomposition",
       "source": "./",
-      "description": "Agent skill for long-context work: decompose tasks that exceed the context window with filtering, chunking, recursive sub-agents and verification, based on the Recursive Language Models research.",
+      "description": "Decompose dense codebase-wide, multi-document, and large-PDF work even when it fits the window. Depth-1 sub-agents, then verify. Based on Recursive Language Models (Zhang, Kraska, Khattab, arXiv:2512.24601).",
       "metadata": {
         "category": "productivity",
         "tags": [

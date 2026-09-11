@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-09-11
+
+### Added
+
+- Added a PDF path: anydoc first, then Firecrawl parse for OCR.
+- Added a 63 MB eval submodule (tccao/mortgage-doc-rag, 131 PDFs) and a bash scorer.
+
+### Changed
+
+- Triggered on dense work even when the input fits the window.
+- Capped recursion at depth 1: sub-agents answer and do not spawn sub-agents.
+
 ## [1.1.0] - 2026-08-28
 
 ### Added

@@ -1,6 +1,6 @@
 # CONVENTIONS: recursive-decomposition skill
 
-Mandatory rules for humans and agents working on this repository. When any other document disagrees, this file wins.
+Rules for this repository. When another document disagrees, this file wins.
 
 Related: [AGENTS.md](./AGENTS.md), [CONTRIBUTING.md](./CONTRIBUTING.md), [skills/recursive-decomposition/SKILL.md](./skills/recursive-decomposition/SKILL.md), [CHANGELOG.md](./CHANGELOG.md), [LICENSE](./LICENSE).
 
@@ -74,6 +74,7 @@ Run before every commit that touches the skill:
 
 ```bash
 bash .github/scripts/validate-skill.sh
+bash .github/scripts/eval-skill.sh check
 npx -y skills@latest add . -l
 claude plugin validate .
 ```

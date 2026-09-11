@@ -1,155 +1,83 @@
-# Cost-Performance Analysis for Recursive Decomposition
+# Cost and when to decompose
 
-This reference provides guidance on when recursive decomposition is cost-effective versus direct processing.
+When to read directly, when to split the work, and what the paper actually measured. Paper figures: Zhang, Kraska, Khattab, Recursive Language Models, arXiv:2512.24601 (v3).
 
-## Decision Framework
+30k and 50k below are harness caps, not a claim that a bigger window removes rot. Density first. In the paper, OOLONG-Pairs is 32k tokens (arXiv:2512.24601, Table 1).
 
-### Use Direct Processing When:
-- Input < 30k tokens
-- Task involves < 5 files
-- Answer is localized to one section
-- Latency is critical
-- Simple lookup or single transformation
+## Decision
 
-### Use Recursive Decomposition When:
-- Input > 50k tokens
-- Task spans 10+ files
-- Information must be aggregated across sources
-- Comprehensive analysis is required
-- Quality matters more than speed
+| Situation | Approach |
+|-----------|----------|
+| One file, one function, or a single needle | Read directly |
+| Linear aggregate or list-everything, and completeness matters | Decompose |
+| Pairwise, quadratic, or multi-hop across scattered sources | Decompose, even under 30k tokens |
+| 10+ files or 50k+ tokens | Decompose |
+| Under 30k tokens and a localised answer | Read directly |
 
-### Gray Zone (30k-50k tokens):
-- Consider task complexity
-- Evaluate quality requirements
-- Factor in time constraints
-- Default to decomposition if unsure about completeness
+Skip decomposition when the answer is one needle, when latency matters more than completeness, or when coordination would cost more than a direct read.
 
-## Cost Structure
+Recursion depth is 1. Sub-agents must not launch sub-agents. Write the batch count, run one parallel wave, merge, then another wave if batches remain.
 
-### Direct Processing
-```
-Cost = Input tokens × Price per token
-Latency = Single API call
-Quality = Degrades with context length
-```
+## What you pay for
 
-### Recursive Decomposition
-```
-Cost = (Σ sub-call tokens) + coordination overhead
-Latency = Max(sub-call latencies) + synthesis time
-Quality = Maintains with proper chunking
-```
+Direct: one call, input tokens times the price. Quality falls as the window fills (context rot).
 
-## Break-Even Analysis
+Decomposed: sum of sub-call tokens plus the parent coordinating them. Latency is the slowest batch plus the merge, if batches run in parallel. Quality holds if each batch stays small and the merge is checked.
 
-From RLM research:
+## Paper costs (Table 1, Figure 11)
 
-**Token Threshold:** ~50k tokens
-- Below: Direct processing often cheaper
-- Above: Decomposition maintains quality at comparable or lower cost
+BrowseComp-Plus, 6 to 11M tokens, GPT-5:
 
-**Quality Threshold:** ~30k tokens
-- Below: Direct processing quality acceptable
-- Above: Context rot begins degrading results
+- RLM(depth=1): 91.3% at $0.99 average ($1.22 std)
+- compaction: 70.5% at $0.57 average
+- GPT-5 base: hits the context limit (0.0*)
+- linear extrapolation of GPT-5-mini ingesting that input: $1.50 to $2.75
 
-**Cost Comparison (from paper):**
-- RLM approaches: ~$0.99 for complex multi-hop QA
-- Summarization baselines: 3x more expensive
-- Direct long-context: Cheaper but lower quality
+RLM is not cheaper than compaction on that row. It is cheaper than stuffing 6 to 11M tokens into the model, and the paper reports it outperforms compaction and retrieval by over 29%.
 
-## Parallelization Benefits
+OOLONG (131k tokens): RLM(GPT-5, depth=1) 56.0 versus GPT-5 44.0 (+28.4%). RLM(Qwen3-Coder, depth=1) 48.0 versus 36.0 (+33.3%).
 
-When sub-tasks are independent, parallel execution provides:
+OOLONG-Pairs (32k tokens): GPT-5 F1 0.1 versus RLM 58.0 at depth=1 (76.0 at depth=3).
 
-```
-Serial: T = t1 + t2 + t3 + ... + tn
-Parallel: T = max(t1, t2, t3, ..., tn) + synthesis
+Median RLM cost is comparable or lower than the base model (Figure 11, 50th percentile). The average can sit higher because of long outlier trajectories. The 95th percentile of runtime is dominated by sequential sub-LLM calls. The paper does not publish a 99th-percentile multiplier.
 
-Speedup = n / (1 + synthesis_overhead/avg_subtask_time)
+## Parallel batches
+
+If batches are independent:
+
+```text
+serial:    T = t1 + t2 + ... + tn
+parallel:  T = max(t1, t2, ..., tn) + merge
 ```
 
-For 10 independent sub-tasks of 30 seconds each:
-- Serial: 300 seconds
-- Parallel (with 10s synthesis): ~40 seconds
-- Speedup: ~7.5x
+Toy timing, not a paper result: ten batches at 30 seconds each, 10-second merge. Serial 300 seconds, parallel about 40.
 
-## Variance Considerations
+## Variance
 
-RLM approaches show high variance in outlier cases:
+RLM trajectories are long-tailed (paper, Observation 4 and Figure 11). Common causes: too many sub-calls, the same span processed twice, deep recursion, clumsy chunks.
 
-**Median cost:** Comparable to direct processing
-**95th percentile:** 2-3x median
-**99th percentile:** Can exceed 5x median
+Caps that help: a sub-call budget, disjoint partitions, a depth limit, a running token count.
 
-Causes of high variance:
-- Excessive sub-calling by model
-- Redundant processing
-- Deep recursion chains
-- Inefficient chunking
+## Cut cost before you recurse
 
-Mitigations:
-- Set sub-call budgets
-- Track and deduplicate queries
-- Limit recursion depth
-- Monitor token usage
+Filter first. A 1000-file tree that greps down to 20 files is a cheaper problem. The 10x in that sketch is arithmetic on the example, not a measured speedup.
 
-## Optimization Strategies
+For aggregates, sample a slice. If the distribution is obvious, stop. If it is not, process the rest.
 
-### 1. Aggressive Filtering
-Filter 90% of content before detailed analysis:
-```
-1000 files → Glob filter → 100 files
-100 files → Grep filter → 20 files
-20 files → Detailed analysis
-Cost reduction: ~10x
-```
+For search, stop when the answer is found, then verify. Do not finish the remaining batches out of habit.
 
-### 2. Sampling for Estimation
-For aggregation tasks, sample before exhaustive processing:
-```
-Sample 10% of items
-Estimate answer distribution
-If high confidence: extrapolate
-If uncertain: process remaining
-```
+If the same tree will be queried again, cache per-chunk notes and drop them when the source changes.
 
-### 3. Early Termination
-For search tasks:
-```
-Process chunks until answer found
-Skip remaining chunks
-Add verification pass
-```
+## Tool choice
 
-### 4. Caching
-For repeated analysis:
-```
-Cache chunk analysis results
-Reuse for similar queries
-Invalidate on source changes
-```
+| Job | Approach |
+|-----|----------|
+| One file by name | glob or find, then read |
+| One function definition | grep, then read that range |
+| One module | read it and follow imports |
+| About 5 related files | read them |
+| A pattern across the tree | grep, then decompose the hits |
+| Aggregate across 50+ files | disjoint batches, parallel sub-agents |
+| Multi-hop across scattered sources | this skill |
 
-## Tool Selection by Cost-Performance
-
-| Scenario | Recommended Approach |
-|----------|---------------------|
-| Find one file by name | Glob (direct) |
-| Find function definition | Grep (direct) |
-| Understand module | Read + follow imports |
-| Analyze 5 related files | Read all (direct) |
-| Search pattern in codebase | Task + Explore agent |
-| Aggregate across 50+ files | Task + parallel agents |
-| Multi-hop reasoning | Task + recursive decomposition |
-
-## Quality vs. Cost Tradeoff Matrix
-
-```
-                    Low Cost          High Cost
-High Quality    | Filtered RLM    | Exhaustive RLM
-                | (targeted)      | (thorough)
-                |-----------------|----------------
-Low Quality     | Direct (short)  | Direct (long)
-                | (acceptable)    | (context rot)
-```
-
-Target: Upper-left quadrant (Filtered RLM for targeted, high-quality results at low cost)
+Read directly on the first four rows. The last three are why the skill exists.

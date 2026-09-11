@@ -1,194 +1,118 @@
-# RLM Decomposition Strategies - Detailed Reference
+# RLM decomposition strategies
 
-This reference contains detailed strategies derived from the Recursive Language Models paper (Zhang, Kraska, Khattab, 2025).
+Strategies taken from Recursive Language Models (Zhang, Kraska, Khattab, arXiv:2512.24601). Numbers below are from that paper, v3.
 
-## The Context Rot Problem
+## Context rot
 
-As context length increases, model performance degrades ("context rot"). This manifests as:
-- Decreased accuracy on information retrieval
-- Missed details in long documents
-- Hallucinated connections between distant content
-- Degraded reasoning over large evidence sets
+Quality falls as the prompt gets longer. The paper (citing Hong et al., 2025) calls this context rot:
 
-RLM strategies bypass context rot by keeping the active context window small while accessing larger datasets programmatically.
+- retrieval misses
+- details dropped in long documents
+- invented links between distant passages
+- weaker reasoning over a large evidence set
 
-## Emergent Decomposition Behaviors
+The fix in the paper is to keep the active window small and reach the rest of the prompt through tools: peek, slice, recurse.
 
-The RLM research identified these naturally-emerging strategies in capable models:
+## What models actually do
 
-### 1. Code-Based Filtering
+Section 5 of the paper describes how current models behave as RLMs: probe the input, then split the work into sub-calls. The patterns below are the ones this skill turns into a protocol.
 
-Models use programmatic filtering to narrow search spaces:
+### Filter with code before you read
 
-```python
-# Example: Finding relevant config files
-import re
+Narrow the set with a pattern, then open what remains.
 
-# Use regex to filter before deep analysis
-config_pattern = r'(database|connection|auth)'
-relevant_files = [f for f in all_files if re.search(config_pattern, f.content)]
+```text
+pattern = (database|connection|auth)
+keep files whose content matches pattern
+read only those files
 ```
 
-**Application in Claude Code:**
-- Use Grep with regex patterns before reading files
-- Apply Glob patterns to narrow file sets
-- Chain multiple filters: file type → keyword → semantic
+In an agent session: grep before read, glob to cut the file set, then chain filters (type, then keyword, then meaning).
 
-### 2. Divide-and-Conquer Chunking
+### Chunk
 
-Observed chunking strategies:
+Uniform: split a 1000-line file into ten 100-line windows, merge with overlap.
 
-**Uniform Chunking:**
-```
-Split 1000-line file into 10 chunks of 100 lines
-Process each chunk independently
-Merge results with overlap handling
-```
+By meaning: one function, class, or section per chunk. Prefer a complete unit over equal sizes.
 
-**Semantic Chunking:**
-```
-Identify natural boundaries (functions, classes, sections)
-Each chunk = one logical unit
-Preserve unit integrity over size uniformity
-```
+By keyword: all error-handling in one batch, all API definitions in another, each with a prompt that matches that batch.
 
-**Keyword-Based Partitioning:**
-```
-Group items by shared characteristics
-All error-related code → Chunk A
-All API definitions → Chunk B
-Process each category with specialized prompts
+### Recurse
+
+This skill uses one level only. Sub-agents answer; they do not spawn sub-agents.
+
+```text
+main agent
+├── sub-agent (chunk A)
+├── sub-agent (chunk B)
+└── sub-agent (chunk C)
+then merge
 ```
 
-### 3. Recursive Self-Invocation Patterns
+The paper's OOLONG-Pairs numbers move with recursion depth (GPT-5: 58.0% F1 at depth=1, 76.0% at depth=3). Extra depth is not free: Qwen3-Coder-480B-A35B often makes syntax errors, and those errors spread into sub-calls, so depth 2 and 3 can score worse than depth 1 on that model (arXiv:2512.24601, Table 1 and Figure 4b). This skill stays at depth 1.
 
-**Single-Level Recursion (most common):**
-```
-Main Agent
-├── Sub-Agent 1 (Chunk A)
-├── Sub-Agent 2 (Chunk B)
-└── Sub-Agent 3 (Chunk C)
-    └── Synthesize results
-```
+### Verify by reading less
 
-**Multi-Level Recursion (complex tasks):**
-```
-Main Agent
-├── Sub-Agent 1
-│   ├── Sub-Sub-Agent 1a
-│   └── Sub-Sub-Agent 1b
-├── Sub-Agent 2
-│   ├── Sub-Sub-Agent 2a
-│   └── Sub-Sub-Agent 2b
-└── Synthesize hierarchically
-```
+1. Write an answer from the large pass.
+2. Pull the cited locations.
+3. Re-read only those locations.
+4. Check the answer against that small window.
+5. If it disagrees, re-read the disagreement, not the whole corpus.
 
-### 4. Verification Through Re-Query
+### Build long output in pieces
 
-Mitigate context rot in verification:
+Generate each section on its own, store the pieces, then stitch. That is how an RLM writes past the model's output limit (paper, section 5).
 
-```
-Step 1: Generate answer from large context
-Step 2: Extract claimed evidence locations
-Step 3: Re-read only those specific locations
-Step 4: Verify answer against fresh, focused context
-Step 5: If mismatch, investigate discrepancy
-```
+## Size limits
 
-### 5. Variable-Based Output Construction
+These match the skill body. They are session limits, not paper results.
 
-For outputs exceeding comfortable generation limits:
+- Files over 2,000 lines or 50 KB: read by line range, never in one shot.
+- PDFs over 100 pages or 30 MB: metadata or a split, not a full ingest.
+- Stay under about 30k tokens in the active window when you can.
 
-```
-# Instead of generating 10,000 words at once:
+## Task shape
 
-section_1 = generate("Write introduction...")
-section_2 = generate("Write methodology...")
-section_3 = generate("Write results...")
-section_4 = generate("Write conclusion...")
+| Shape | Typical job | Approach |
+|-------|-------------|----------|
+| O(1) | one needle | filter until the set is small, then read |
+| O(n) | count, list, summarise every item | map-reduce over disjoint batches |
+| O(n²) | pairwise relations | blocked pairs, sample first if the full grid is too large |
+| O(log n) | search in ordered or nested data | divide and conquer |
 
-# Stitch with coherence
-full_output = stitch_with_transitions([section_1, section_2, section_3, section_4])
-```
+Figure 1 in the paper scales S-NIAH, OOLONG, and OOLONG-Pairs from 2^13 to 2^20 tokens. GPT-5 drops faster on the linear and quadratic tasks. Past 2^14 tokens the RLM beats GPT-5 on those plots.
 
-## Claude Code Constraints
+## Model differences (from the paper)
 
-To ensure optimal performance within Claude's environment:
+GPT-5 as an RLM: fewer syntax errors in trajectories, more stable as depth increases (Table 1).
 
--   **Code Processing Limit**: ~2,000 lines. Files larger than this should not be read entirely into context. Use `grep` or read specific line ranges.
--   **PDF Size Limit**: ~30MB or 100 pages per request. Exceeding this often leads to errors or truncation.
--   **Text File Limit**: ~50KB is a safe maximum for a single `view_file` operation without chunking.
--   **Context Window**: While large, optimal reasoning occurs with <30k tokens. Use decomposition to stay within this "reasoning sweet spot".
+Qwen3-Coder-480B-A35B as an RLM: more syntax errors even on correct runs (Figure 4b). Extra recursion depth can hurt. Prefer coarser batches and a hard depth cap with this class of model.
 
-## Task Complexity Classification
+In-context decomposition examples in the system prompt change the first split and the final score on OOLONG, even when the example is from another task (Figure 4a). Put a concrete split in the sub-agent brief.
 
-### Constant Complexity (O(1))
-- Single needle in haystack
-- Finding one specific item
-- Strategy: Binary search filtering
+## Failure modes
 
-### Linear Complexity (O(n))
-- Must examine all items once
-- Aggregation, counting, summarization
-- Strategy: Map-reduce with chunking
+Infinite recursion: this skill is depth 1; sub-agents must not launch sub-agents.
 
-### Quadratic Complexity (O(n²))
-- Pairwise comparisons needed
-- Finding relationships between items
-- Strategy: Blocked pairwise with sampling
+The same span processed twice: partition once into disjoint batches; deduplicate before merge.
 
-### Logarithmic Complexity (O(log n))
-- Hierarchical search
-- Finding in sorted/structured data
-- Strategy: Divide and conquer
+Sub-agent missing the question or the schema: the brief is the whole context that agent gets.
 
-## Model-Specific Observations
+Merged answer contradicts the files: spot-check cited lines; re-read the conflict.
 
-From the RLM paper:
+## Numbers from Table 1 (GPT-5 unless noted)
 
-**Conservative Models (e.g., GPT-5):**
-- Fewer, more targeted sub-calls
-- Better cost efficiency
-- May miss edge cases
+| Task | Without RLM | RLM (depth=1) |
+|------|-------------|----------------|
+| BrowseComp-Plus, 6 to 11M tokens | compaction 70.5%; GPT-5 base hits the context limit | 91.3% at $0.99 average |
+| OOLONG | GPT-5 44.0 | 56.0 (+28.4% vs base; Qwen3-Coder +33.3%) |
+| OOLONG-Pairs | F1 0.1 | F1 58.0 (76.0 at depth=3) |
 
-**Aggressive Models (e.g., Qwen3-Coder):**
-- Many sub-calls, sometimes redundant
-- More thorough coverage
-- Higher variance in costs
+A linear extrapolation of GPT-5-mini ingesting 6 to 11M tokens is $1.50 to $2.75. Median RLM cost is comparable or lower than the base model; the average can rise on long outlier trajectories.
 
-**Optimization:** Adjust decomposition granularity based on model tendencies. More conservative chunking for aggressive models, more exhaustive for conservative ones.
+## Skip decomposition when
 
-## Failure Modes and Mitigations
-
-### Infinite Recursion
-**Problem:** Sub-agent spawns sub-sub-agents indefinitely
-**Mitigation:** Set explicit depth limits; verify chunk sizes decrease
-
-### Redundant Processing
-**Problem:** Same content processed multiple times
-**Mitigation:** Track processed segments; deduplicate before synthesis
-
-### Context Loss
-**Problem:** Sub-agents lack necessary context for their sub-task
-**Mitigation:** Include minimal necessary context in each sub-query; pass relevant metadata
-
-### Synthesis Errors
-**Problem:** Aggregated results contain contradictions or gaps
-**Mitigation:** Verification pass over synthesized output; spot-check against source
-
-## Performance Benchmarks (from paper)
-
-| Task Type | Direct Model | RLM Approach | Improvement |
-|-----------|--------------|--------------|-------------|
-| Multi-hop QA (6-11M tokens) | 70% | 91% | +21% |
-| Linear aggregation | Baseline | +28-33% | Significant |
-| Quadratic reasoning | <0.1% | 58% | Massive |
-| Context scaling | 2^14 tokens | 2^18 tokens | 16x |
-
-## When NOT to Use Recursive Decomposition
-
-- Tasks with <10k tokens of input
-- Single-file operations
-- Questions answerable from one location
-- Time-critical operations where latency matters more than completeness
-- Tasks where the overhead of coordination exceeds the benefit
+- the job is one file, one function, or a single needle
+- the answer sits in one obvious range
+- latency matters more than completeness
+- coordination would cost more than a direct read

@@ -1,0 +1,3 @@
+[submodule "skills/recursive-decomposition/evals/files/mortgage-doc-rag"]
+	path = skills/recursive-decomposition/evals/files/mortgage-doc-rag
+	url = https://github.com/tccao/mortgage-doc-rag.git

@@ -1,7 +1,7 @@
 {
   "name": "recursive-decomposition",
-  "version": "1.1.0",
-  "description": "Agent skill for long-context work: decompose tasks that exceed the context window with filtering, chunking, recursive sub-agents and verification, based on the Recursive Language Models research.",
+  "version": "1.2.0",
+  "description": "Decompose dense codebase-wide, multi-document, and large-PDF work even when it fits the window. Depth-1 sub-agents, then verify. Based on Recursive Language Models (Zhang, Kraska, Khattab, arXiv:2512.24601).",
   "author": {
     "name": "Massimo De Luisa",
     "email": "massimodeluisa@me.com",

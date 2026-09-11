@@ -1,17 +1,17 @@
 # Agents: recursive-decomposition skill
 
-Entrypoint for agentic tooling working on this repository.
+Start here when an agent edits this repository.
 
 ## Read these first (mandatory)
 
 | Doc | Why |
 |-----|-----|
-| **[CONVENTIONS.md](./CONVENTIONS.md)** | Skill format, sources, prose, git, versioning, validation |
-| **[CONTRIBUTING.md](./CONTRIBUTING.md)** | Change workflow |
-| **[skills/recursive-decomposition/SKILL.md](./skills/recursive-decomposition/SKILL.md)** | The skill itself |
-| **[CHANGELOG.md](./CHANGELOG.md)** | Release history |
+| [CONVENTIONS.md](./CONVENTIONS.md) | Skill format, sources, prose, git, versioning, validation |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | Change workflow |
+| [skills/recursive-decomposition/SKILL.md](./skills/recursive-decomposition/SKILL.md) | The skill itself |
+| [CHANGELOG.md](./CHANGELOG.md) | Release history |
 
-Follow **CONVENTIONS.md** for every change. This file is a short checklist only. `CLAUDE.md` is a symlink to this file.
+Follow CONVENTIONS.md for every change. This file is a short checklist only. `CLAUDE.md` is a symlink to this file.
 
 ## Language policy
 
@@ -29,6 +29,7 @@ Follow **CONVENTIONS.md** for every change. This file is a short checklist only.
 
 ```bash
 bash .github/scripts/validate-skill.sh
+bash .github/scripts/eval-skill.sh check
 npx -y skills@latest add . -l
 claude plugin validate .
 ```

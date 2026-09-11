@@ -1,42 +1,42 @@
-# Example: Codebase-Wide Error Handling Analysis
+# Example: error handling across a codebase
 
 Tool calls below use Claude Code names (`Glob`, `Grep`, `Task`); map them to your agent's file search, content search and sub-agent tools.
 
-This example demonstrates recursive decomposition for analyzing error handling patterns across a large codebase.
+Walkthrough of the protocol on a made-up tree. File counts are the scenario, not a paper result.
 
 ## Task
-"Analyze all error handling patterns in this codebase and provide a comprehensive report on consistency, gaps, and recommendations."
 
-## Decomposition Strategy
+"Analyze all error handling patterns in this codebase and report where they agree, where they diverge, and what to change."
 
-### Phase 1: Filter and Identify (Constant complexity)
+## 1. Filter
 
-```
-Step 1: Identify relevant file types
-- Glob("**/*.ts") → 450 files
-- Glob("**/*.tsx") → 120 files
-- Total: 570 files
+```text
+Glob("**/*.ts")  → 450 files
+Glob("**/*.tsx") → 120 files
+total: 570 files
 
-Step 2: Filter for error-related code
-- Grep("catch|throw|Error|exception", type="ts") → 89 files
-- Grep("try.*catch|\.catch\\(", type="ts") → 67 files
-- Union: 102 unique files with error handling
+Grep("catch|throw|Error|exception", type="ts") → 89 files
+Grep("try.*catch|\.catch\\(", type="ts")       → 67 files
+union: 102 files with error handling
 ```
 
-### Phase 2: Partition for Parallel Processing
+Do not read the 570. Grep first.
 
-```
-Partition by module:
-- src/api/* → 23 files (Batch A)
-- src/services/* → 31 files (Batch B)
-- src/components/* → 28 files (Batch C)
-- src/utils/* → 12 files (Batch D)
-- Other → 8 files (Batch E)
+## 2. Partition
+
+```text
+src/api/*        23 files  batch A
+src/services/*   31 files  batch B
+src/components/* 28 files  batch C
+src/utils/*      12 files  batch D
+other             8 files  batch E
 ```
 
-### Phase 3: Launch Parallel Sub-Agents
+Five to ten files per batch is the skill default. These batches are larger; keep them only if each still fits a sub-agent window, or split again.
 
-```
+## 3. One sub-agent per batch
+
+```text
 Task(subagent_type="Explore", prompt="""
 Analyze error handling in src/api/*.
 For each file with error handling:
@@ -46,86 +46,76 @@ For each file with error handling:
 4. Flag any unhandled promise rejections
 Return structured findings.
 """)
-
-# Launch 5 agents in parallel for batches A-E
 ```
 
-### Phase 4: Aggregate Results
+Launch A through E in parallel. Each brief must include the files, the question, and the output schema. Do not reuse the same query on overlapping files.
 
-```
-Collect findings from all sub-agents:
-- Batch A: HTTP error handling, custom ApiError class
-- Batch B: Service-level try/catch, logging patterns
-- Batch C: UI error boundaries, toast notifications
-- Batch D: Utility error wrappers, validation errors
-- Batch E: Mixed patterns, some inconsistencies
-```
+## 4. Merge
 
-### Phase 5: Synthesize Report
-
-```
-Categories identified:
-1. API Layer: ApiError, HttpError, ValidationError
-2. Service Layer: ServiceError, DatabaseError
-3. UI Layer: Error boundaries, user-facing messages
-4. Utilities: Generic error wrappers
-
-Patterns:
-- Consistent: HTTP errors always include status code
-- Gap: Database errors don't preserve original error
-- Recommendation: Add error codes for client handling
+```text
+A: HTTP errors, custom ApiError
+B: service-level try/catch, logging
+C: UI error boundaries, toasts
+D: wrappers, validation errors
+E: mixed, a few strays
 ```
 
-### Phase 6: Verify with Spot Checks
+## 5. Write the report from the merge
 
-```
-Verification queries:
-1. "Confirm ApiError is used consistently in src/api/"
-2. "Check if DatabaseError preserves stack traces"
-3. "Verify error boundaries cover all route components"
+```text
+API:     ApiError, HttpError, ValidationError
+service: ServiceError, DatabaseError
+UI:      error boundaries, user-facing messages
+utils:   generic wrappers
+
+HTTP errors always carry a status code
+DatabaseError drops the original error
+add error codes the client can switch on
 ```
 
-## Expected Output Structure
+## 6. Spot-check
+
+Re-read a handful of cited lines, not the 102 files:
+
+```text
+Is ApiError used throughout src/api/?
+Does DatabaseError keep the stack?
+Do error boundaries cover every route component?
+```
+
+If two batches disagree, re-read the conflict.
+
+## Report shape
 
 ```markdown
-# Error Handling Analysis Report
+# Error handling
 
-## Executive Summary
-- 102 files contain error handling logic
-- 4 main error categories identified
-- 3 consistency issues found
-- 5 recommendations provided
+102 files, four error families, three consistency bugs.
 
-## Error Type Taxonomy
-### API Errors (src/api/)
-- ApiError: Base class for HTTP errors
-- ValidationError: Request validation failures
-- AuthenticationError: Auth failures
+## Types
+### API (src/api/)
+- ApiError: HTTP errors
+- ValidationError: bad requests
+- AuthenticationError: auth failures
 
-### Service Errors (src/services/)
+### Service (src/services/)
 ...
 
-## Pattern Analysis
-### Consistent Patterns
-1. All API routes wrap handlers in try/catch
-2. Errors include request ID for tracing
-...
+## What already agrees
+1. API routes wrap handlers in try/catch
+2. Errors include a request ID
 
-### Inconsistencies Found
-1. Some services swallow errors without logging
-2. Database errors lose original stack trace
-...
+## What does not
+1. Some services swallow errors with no log
+2. Database errors lose the original stack
 
-## Recommendations
-1. Implement error codes enum
-2. Add error boundary to remaining routes
-...
+## Changes
+1. Error-code enum
+2. Error boundary on the remaining routes
 ```
 
-## Metrics
-
-- **Files analyzed:** 102
-- **Sub-agents used:** 5
-- **Total tokens processed:** ~150k (across all agents)
-- **Equivalent direct context:** Would require 150k token window
-- **Quality:** High (no context rot)
+| | |
+|-|-|
+| Files after grep | 102 |
+| Sub-agents | 5 |
+| Tokens | spread across the five, not one 150k window |
